@@ -21,10 +21,74 @@ index 9a3b3e2..4a44d20 100644
  all: deploy
  	@echo "Creating the world. Cross your fingers."
 diff --git a/export/source/_static/css/site.css b/export/source/_static/css/site.css
-index cba0b63..35f17ab 100644
+index cba0b63..e177c14 100644
 --- a/export/source/_static/css/site.css
 +++ b/export/source/_static/css/site.css
-@@ -2281,4 +2281,9 @@ h4.commentsTitle, div.js-kit-comments {
+@@ -208,14 +208,17 @@ body h1 {
+     font-size: 28px;
+     font-weight: normal;
+     font-family: Futura, "Century Gothic", AppleGothic, sans-serif;
+-    margin: 0 0 18px 0;
++    margin: 0 0 12px 0;
+     clear: none;
+ }
+ 
++h2, h3, h4, h5, h6 {
++    margin: 1em 0 12px;
++}
++
+ h2 {
+     font-size: 20px;
+     line-height: 120%;
+-    margin: 33px 0 10px;
+     color: #C00;
+ }
+ 
+@@ -229,14 +232,12 @@ h3 {
+     font-size: 16px;
+     color: #C00;
+     line-height: 120%;
+-    margin: 40px 0 10px 0;
+ }
+ 
+ h4 {
+     font-size: 14px;
+     font-weight: bold;
+     line-height: 120%;
+-    margin: 20px 0 4px 0;
+ }
+ 
+ p, ol, ul, dl {
+@@ -261,7 +262,7 @@ ul {
+ }
+ 
+ li {
+-    margin: 12px 0;
++    margin: 2px 0;
+ }
+ 
+ dl {
+@@ -277,7 +278,7 @@ dl dd {
+ }
+ 
+ pre, code {
+-    font-family: "Lucida Grande", "Lucida Sans", Geneva, verdana, san-serif;
++    font-family: "Menlo", "Consolas", monospace;
+ }
+ pre {
+     margin: 12px 0;
+@@ -288,10 +289,6 @@ pre {
+     color: #555;
+ }
+ 
+-code {
+-    font-family:"courier" !important;
+-}
+-
+ /* ---------- Syntax Highlighting ---------- */
+ 
+ #main .syntaxhighlighter .toolbar {
+@@ -2281,4 +2278,9 @@ h4.commentsTitle, div.js-kit-comments {
      font-size: 11px;
      color: #6F6F6F;
      border-top: 1px solid #E5E5E5;
@@ -174,3 +238,15 @@ index 3c35b0f..15ed9f8 100644
 -{%- block relbar2 %}{% endblock %}
 -{%- block sidebar2 %}{% endblock %}
 -{% block footer %}{% endblock %}
+diff --git a/export/source/conf.py b/export/source/conf.py
+index 6b43587..105fdf4 100644
+--- a/export/source/conf.py
++++ b/export/source/conf.py
+@@ -167,6 +167,7 @@ htmlhelp_basename = 'DojoToolkitdoc'
+ 
+ html_translator_class = "dojowiki.DojoHTMLTranslator"
+ 
++html_style = 'default.css'
+ 
+ # Options for LaTeX output
+ # ------------------------
