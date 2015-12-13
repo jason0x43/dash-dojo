@@ -1,0 +1,16 @@
+{
+	"name": "dojo-dash-docset",
+	"description": "Dojo docset for Dash",
+	"license": "MIT",
+	"repository": "https://github.com/jason0x43/dash-docset-dojo",
+	"dependencies": {
+		"sqlite3": "~3.1.0",
+		"fs-extra": "~0.22.0",
+		"yargs": "~3.24.0"
+	},
+	"scripts": {
+		"build": "node build.js build",
+		"clean": "node build.js clean",
+		"index": "node build.js index"
+	}
+}

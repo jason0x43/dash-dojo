@@ -1,0 +1,13 @@
+diff --git a/config.js b/config.js
+index a7d70e7..c279b97 100644
+--- a/config.js
++++ b/config.js
+@@ -47,7 +47,7 @@ define({
+ 	},
+ 
+ 	// The base path for all the packages being processed.
+-	basePath: '../trunk',
++	basePath: '../rstwiki/_static',
+ 
+ 	// The packages to be processed by the parser. The key is the name of the package, and the value is the
+ 	// location of the package relative to basePath.

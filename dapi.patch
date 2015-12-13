@@ -1,0 +1,383 @@
+diff --git a/config.js b/config.js
+index 52a5004..baca6e6 100644
+--- a/config.js
++++ b/config.js
+@@ -7,7 +7,7 @@ module.exports = {
+      * set to wherever you want the application to load dojo from (shouldn't really need changed unless you want to switch DOJO script inclusion to a different location).
+      * Also sets the baseUrl config
+      **/
+-    dojoBase: '//ajax.googleapis.com/ajax/libs/dojo/1.9.1',
++    dojoBase: '../../scripts',
+ 
+     /**
+      * theme is used to configure the dijit theme and body class name to use.
+@@ -46,7 +46,7 @@ module.exports = {
+     /**
+      * spiderVersions Array of versions to generate via spider.js
+      **/
+-    spiderVersions : ['1.8', '1.9', "1.10"],
++    spiderVersions : ['1.10'],
+ 
+     /**
+      * versions is used to make available versions loadable from app.js i.e. the list of versions in the version dropdown - these need to match the directory names
+@@ -78,12 +78,12 @@ module.exports = {
+         /**
+          * dir - set to a local directory to search for reference documentation. You can set to an absolute path or relative to the api directory itself e.g. 'reference-guide/'
+          **/
+-        dir: '../website/reference-guide/',
++        dir: '../rstwiki/export/build/',
+ 
+         /**
+          * url - set to a URL you want the reference document to point to. The version path will be added and module full path location e.g. '/reference-guide/1.9/dojo/_base/sniff'. You can also use an absolute URL path.
+          **/
+-        url: '/reference-guide/',
++        url: '../../../reference-guide/',
+         /**
+          * suffix - set to the file extension of the reference docs you want to locally search for.
+          **/
+diff --git a/public/css/site_original.css b/public/css/site_original.css
+index c46aeda..5def04e 100644
+--- a/public/css/site_original.css
++++ b/public/css/site_original.css
+@@ -2364,4 +2364,9 @@ html {
+ /* override */
+ #main h1 {
+     margin: 0 0 5px 0;
+-}
+\ No newline at end of file
++}
++
++body {
++	padding: 10px 20px;
++	box-sizing: border-box;
++}
+diff --git a/spider.js b/spider.js
+index 85b7f48..5de8a01 100644
+--- a/spider.js
++++ b/spider.js
+@@ -7,6 +7,7 @@ var fs = require('fs'),
+     refdoc = require('./lib/refdoc'),
+     tree = require('./lib/tree'),
+     fsExtra = require('fs-extra'),
++    path = require('path'),
+     staticFolder = 'staticoutput/';
+ 
+ // macro calls
+@@ -24,6 +25,7 @@ console.log("Static API viewer generation started");
+ var indexjade = __dirname + "/" + config.viewsDirectory + "/index.jade";
+ var data = fs.readFileSync(indexjade, "utf8");
+ var fn = jade.compile(data, {filename: indexjade, pretty: true});
++config.contextPath = '';
+ var indexhtml = fn({ title : 'API Documentation' + config.siteName, config: config, module : null});
+ // generate tree.html
+ 
+@@ -48,6 +50,7 @@ var modulejade = __dirname + "/" + config.viewsDirectory + "/module.jade";
+ var data = fs.readFileSync(modulejade, "utf8");
+ var fn = jade.compile(data, {filename: modulejade, pretty: true, autoHyperlink: autoHyperlink, convertType: convertType});
+ var now = null;
++var basePath = path.resolve('./staticoutput');
+ 
+ config.spiderVersions.forEach(function (version) {
+     var treeitems = tree.getTree(version, config);
+@@ -83,7 +86,9 @@ config.spiderVersions.forEach(function (version) {
+                         mkdirp.sync(versionfolder + patharr.join("/"));
+                     }
+                 }
+-                var html = fn({ module : retObjectItem, config: config, autoHyperLink: autoHyperlink});
++                var modulePath = path.dirname(path.resolve(path.join(versionfolder, modulefile)));
++                config.contextPath = path.relative(modulePath, basePath) + '/';
++                var html = fn({ filename: modulefile, module : retObjectItem, config: config, autoHyperLink: autoHyperlink});
+                 fs.writeFileSync(versionfolder + patharr.join("/") + "/" + modname + ".html", html);
+                 //console.log('Wrote at ' + new Date().toISOString() + ' - ' + versionfolder + modulefile);
+             });
+diff --git a/views/index.jade b/views/index.jade
+index 3fb8a34..ea04ea9 100644
+--- a/views/index.jade
++++ b/views/index.jade
+@@ -1,57 +1,7 @@
+ extend layout
+ block main
+-    div#main(data-dojo-type="dijit.layout.BorderContainer", data-dojo-props="liveSplitters: false")
+-        block header
+-            div#head(data-dojo-type="dijit.layout.ContentPane", data-dojo-props="region: 'top'")
+-                // move this header to a block later
+-                div#header
+-                    div.container
+-                        span#logo
+-                            a(href="/", title="home")
+-                                img(src="#{config.contextPath}images/logo.png", alt="Dojo Toolkit")
+-                        ul#navigation
+-                            li.home
+-                                a(href="/")
+-                                    span.homeIcon
+-                            li.download
+-                                a(href="/download/") Download
+-                            li.features
+-                                a(href="/features/") Features
+-                            li.docs
+-                                a(href="/docs/") Documentation
+-                            li.community
+-                                a(href="/community/") Community
+-                            li.blog
+-                                a(href="/blog/") Blog
+-        block navigation
+-            div#navigation(data-dojo-type="dijit.layout.BorderContainer", data-dojo-props="minSize: 20, region:\'leading\', splitter: true, gutters: false", style="width:300px;") 
+-                div(data-dojo-type="dijit.layout.ContentPane", data-dojo-props="title:'Search', region:'top'")
+-                    div(style="padding:4px")
+-                        label(for="versionSelector") Version:
+-                        select#versionSelector
+-                            - each version in config.versions
+-                                option(selected=config.defaultVersion == version) #{version}
+-                        input#apiSearchWidget(data-dojo-type="dijit.form.FilteringSelect", style="width:150px; display:'inline';", data-dojo-props="placeholder:\'Quick navigation\', missingMessage : \'Module name not found\', required: false, hasDownArrow : true")
+-
+-                div(data-dojo-type="dijit.layout.AccordionContainer",data-dojo-props="region: 'center'") 
+-                    div#moduleTreePane(data-dojo-type="dijit.layout.ContentPane", data-dojo-props="title: '', selected: true")
+-                    //- an alternative menu for google because we're ajax menu based
+-                    p#plainTree See the - 
+-                        a(href="#{config.contextPath}#{module !=null ? module.version : config.defaultVersion}/tree.html") plain HTML tree
+-                        | listing all modules.
+-                    script(type="text/javascript")
+-                        //- hide the menu if JS is available, this is poor, it expects (and possibly incorrectly) that only search engines don't use js                    
+-                        document.getElementById("plainTree").style.display = "none";
+-                    include legend   
++    div#main
+         block content            
+-            div#content(data-dojo-type="dijit.layout.TabContainer", data-dojo-props="region: 'center', tabStrip: true")
+-                - if (module !=null)
+-                    - var idModVersionReplaced = module.modulename + '_' + module.version.replace(/\./g, '_')
+-                    div#baseTab_welcomeTab(data-dojo-type="api.ModuleContentPane",data-dojo-props="title: 'Welcome'")
++            div#content
++                    div#baseTab_welcomeTab
+                         include moduledefault
+-                    div(data-dojo-type="api.ModuleContentPane",data-dojo-props="title: '#{module.location} (#{module.version})', selected: true, closable: true, page : '#{module.modulename}', version : '#{module.version}', declarativeTab : true, id : '#{idModVersionReplaced}'")
+-                        include module
+-                - else
+-                    div#baseTab_welcomeTab(data-dojo-type="api.ModuleContentPane",data-dojo-props="title: 'Welcome'")
+-                        include moduledefault
+-
+diff --git a/views/layout.jade b/views/layout.jade
+index b35951f..d28bd5a 100644
+--- a/views/layout.jade
++++ b/views/layout.jade
+@@ -1,11 +1,12 @@
+ !!!5
+ html
+   head
++    meta(charset="utf8")
+     meta(http-equiv="X-UA-Compatible", content="IE=edge,chrome=1")
+     title #{title} Version #{module !=null ? module.version : config.defaultVersion}
+     meta(name="Description", content="Dojo toolkit API documentation viewer, version #{module !=null ? module.version : config.defaultVersion}")
+-    link(rel='stylesheet', href="#{config.dojoBase}/dojo/resources/dojo.css")
+-    link(rel='stylesheet', href="#{config.dojoBase}/dijit/themes/#{config.theme}/#{config.theme}.css")
++    link(rel='stylesheet', href="#{config.contextPath}scripts/dojo/resources/dojo.css")
++    link(rel='stylesheet', href="#{config.contextPath}scripts/dijit/themes/#{config.theme}/#{config.theme}.css")
+ 
+     link(rel='stylesheet', href="#{config.contextPath}css/jsdoc_original.css")
+     link(rel='stylesheet', href="#{config.contextPath}css/site_original.css")
+@@ -18,11 +19,11 @@ html
+             apiDefault : '#{config.defaultVersion}',
+             moduleExtension : '#{config.moduleExtension}',
+             siteName : '#{config.siteName}',
+-            baseUrl: '#{config.dojoBase}/dojo',
++            baseUrl: '#{config.contextPath}scripts/dojo',
+             #{(config.bugdb != null) ? 'bugdb : \'' + config.bugdb + '\'' : 'bugdb : null'}
+         }
+ 
+-    script(type="text/javascript", src="#{config.dojoBase}/dojo/dojo.js")
++    script(type="text/javascript", src="#{config.contextPath}scripts/dojo/dojo.js")
+     script(type="text/javascript", src="#{config.contextPath}scripts/api.js")
+     
+     
+diff --git a/views/module.jade b/views/module.jade
+index 1b73c17..063949b 100644
+--- a/views/module.jade
++++ b/views/module.jade
+@@ -1,64 +1,90 @@
+-- if (config.runner == null)
+-    script(type="text/javascript")
+-        // If user loads this page directly, redirect to index page, with parameter to initially show tab for this module.
+-        // If google loads this page directly it will hopefully ignore this script and just index the documentation below.
+-        // Also, when this page is loaded via XHR this script block should be ignored.
+-        location = "#{config.contextPath}?qs=#{module !=null ? module.version : config.defaultVersion}/#{module.location}" + location.hash;
++!!!5
++html
++    head
++        meta(http-equiv="X-UA-Compatible", content="IE=edge,chrome=1")
++        meta(name="Description", content="Dojo toolkit API documentation viewer, version #{module !=null ? module.version : config.defaultVersion}")
++        title #{module.location} Version #{module !=null ? module.version : config.defaultVersion}
++        link(rel='stylesheet', href="#{config.contextPath}scripts/dojo/resources/dojo.css")
++        link(rel='stylesheet', href="#{config.contextPath}scripts/dijit/themes/#{config.theme}/#{config.theme}.css")
++        link(rel='stylesheet', href="#{config.contextPath}css/jsdoc_original.css")
++        link(rel='stylesheet', href="#{config.contextPath}css/site_original.css")
++        script(type="text/javascript")
++            // packages: [{name:"api", location:location.pathname.replace(/\/[^/]+$/, '/') + "#{config.contextPath}scripts/api"}],
++            dojoConfig = {async:1, debug:1, noGlobals:0,
++                packages: [{name:"api", location: "#{config.contextPath}scripts/api"}],
++                apiPath : '#{config.contextPath}',
++                context : '#{config.contextPath}',
++                apiDefault : '#{config.defaultVersion}',
++                moduleExtension : '#{config.moduleExtension}',
++                siteName : '#{config.siteName}',
++                baseUrl: '#{config.contextPath}scripts/dojo',
++                #{(config.bugdb != null) ? 'bugdb : \'' + config.bugdb + '\'' : 'bugdb : null'}
++            }
+ 
+-div.jsdoc-permalink(style="display:none") #{config.contextPath}#{module !=null ? module.version : config.defaultVersion}/#{module.location}.html
+-h1(class="#{convertType(module.type)}Icon36 jsdoc-title module-title") #{module.location}
+-        span(style="font-size:11px;color:#999;")  (version #{module.version})
+-- if (module.mixins != null)
+-    div.jsdoc-mixins
+-        label Extends 
+-        each item, idx in module.mixins
+-            a.jsdoc-link(href='#{config.contextPath}#{module !=null ? module.version : config.defaultVersion}/#{item.location}#{config.moduleExtension}') #{item.location}#{idx < module.mixins.length-1 ? ", " : ""}
+-- if (module.summary != null)
+-      div.jsdoc-full-summary !{autoHyperlink(module.summary, config, module.version)}
+-- if (module.description != null)
+-      div.jsdoc-full-summary !{autoHyperlink(module.description, config, module.version)}
+-- if (module.kwArgs && module.kwArgs == true)
+-    p <strong>Note:</strong> This is not a real constructor, but just a description of the type of object that should be passed as
+-        | a parameter to some method(s), and/or the return value from some method(s).
+-        | In other words, the type exists only for documentation purposes, and you <strong>cannot</strong> call <code>new #{module.location.replace(/.*\//, "")}()</code>
+-- if (module.usage != null)
+-      div.jsdoc-function-information
+-        h2 Usage:
+-        div.function-signature
+-            - if (module.usage.isTopLevelFunction == false)
+-                span.keyword var
+-                |  foo = new #{module.location.replace(/.*\//, "")}
+-            - else
+-                | #{module.location.replace(/.*\//, "")}
+-            span.parameters (#{module.usage.parameterList});
+-    - if (module.usage && module.usage.isTopLevelFunction == false)
+-      div.jsdoc-inheritance Defined by !{autoHyperlink(module.usage.from, config, module.version)}
+-      - if (module.usage.description !=null)
+-        div.jsdoc-summary
+-            !{module.usage.description}
+-params = module.parameters
+-returnTypes = module.usage !=null ? module.usage.returnTypes : null
+-returnDescription = module.usage !=null ? module.usage.returnDescription : null
+-include module/parametertable
+-- if (config.refDocs.enabled == true)
+-    - refDoc = getRefDoc(module.location, module.version, config)
+-        - if (refDoc)
+-            p See the 
+-                a(href='#{config.refDocs.url + module.version + "/" + refDoc + config.refDocs.suffixToGenerate}', target='_blank') #{module.location} reference documentation
+-                |  for more information.
+-examples = module.examples
+-div.jsdoc-children
+-    div.jsdoc-field-list
+-        include module/examples
+-        include module/propertiessummary
+-        include module/methodssummary
+-        include module/eventssummary
++        script(type="text/javascript", src="#{config.contextPath}scripts/dojo/dojo.js")
+ 
+-div.jsdoc-children
+-    div.jsdoc-fields
+-        include module/properties
+-        include module/methods
+-        include module/events
++        script(type="text/javascript", src="#{config.contextPath}scripts/syntaxhighlighter/scripts/shCore.js")
++        script(type="text/javascript", src="#{config.contextPath}scripts/syntaxhighlighter/scripts/shBrushJScript.js")
++        script(type="text/javascript", src="#{config.contextPath}scripts/syntaxhighlighter/scripts/shBrushXml.js")
+ 
+-- if (config.bugdb != null)
+-    a.feedback(href='#{config.bugdb}#{config.contextPath}#{module !=null ? module.version : config.defaultVersion}/#{module.location}') Error in the documentation? Can’t find what you are looking for? Let us know!
+\ No newline at end of file
++        link(rel='stylesheet', href="#{config.contextPath}scripts/syntaxhighlighter/css/shCore.css")
++        link(rel='stylesheet', href="#{config.contextPath}scripts/syntaxhighlighter/css/shThemeDefault.css")
++
++    body(class="#{config.theme}")
++        div.jsdoc-permalink(style="display:none") #{config.contextPath}#{module !=null ? module.version : config.defaultVersion}/#{module.location}.html
++        h1(class="#{convertType(module.type)}Icon36 jsdoc-title module-title") #{module.location}
++                span(style="font-size:11px;color:#999;")  (version #{module.version})
++        - if (module.mixins != null)
++            div.jsdoc-mixins
++                label Extends 
++                each item, idx in module.mixins
++                    a.jsdoc-link(href='#{config.contextPath}#{module !=null ? module.version : config.defaultVersion}/#{item.location}#{config.moduleExtension}') #{item.location}#{idx < module.mixins.length-1 ? ", " : ""}
++        - if (module.summary != null)
++              div.jsdoc-full-summary !{autoHyperlink(module.summary, config, module.version)}
++        - if (module.description != null)
++              div.jsdoc-full-summary !{autoHyperlink(module.description, config, module.version)}
++        - if (module.kwArgs && module.kwArgs == true)
++            p <strong>Note:</strong> This is not a real constructor, but just a description of the type of object that should be passed as
++                | a parameter to some method(s), and/or the return value from some method(s).
++                | In other words, the type exists only for documentation purposes, and you <strong>cannot</strong> call <code>new #{module.location.replace(/.*\//, "")}()</code>
++        - if (module.usage != null)
++              div.jsdoc-function-information
++                h2 Usage:
++                div.function-signature
++                    - if (module.usage.isTopLevelFunction == false)
++                        span.keyword var
++                        |  foo = new #{module.location.replace(/.*\//, "")}
++                    - else
++                        | #{module.location.replace(/.*\//, "")}
++                    span.parameters (#{module.usage.parameterList});
++            - if (module.usage && module.usage.isTopLevelFunction == false)
++              div.jsdoc-inheritance Defined by !{autoHyperlink(module.usage.from, config, module.version)}
++              - if (module.usage.description !=null)
++                div.jsdoc-summary
++                    !{module.usage.description}
++        params = module.parameters
++        returnTypes = module.usage !=null ? module.usage.returnTypes : null
++        returnDescription = module.usage !=null ? module.usage.returnDescription : null
++        include module/parametertable
++        - if (config.refDocs.enabled == true)
++            - refDoc = getRefDoc(module.location, module.version, config)
++                - if (refDoc)
++                    p See the 
++                        a(href='#{config.contextPath}reference-guide/#{module.version + "/" + refDoc + config.refDocs.suffixToGenerate}', target='_blank') #{module.location} reference documentation
++                        |  for more information.
++        examples = module.examples
++        div.jsdoc-children
++            div.jsdoc-field-list
++                include module/examples
++                include module/propertiessummary
++                include module/methodssummary
++                include module/eventssummary
++
++        div.jsdoc-children
++            div.jsdoc-fields
++                include module/properties
++                include module/methods
++                include module/events
++
++        - if (config.bugdb != null)
++            a.feedback(href='#{config.bugdb}#{config.contextPath}#{module !=null ? module.version : config.defaultVersion}/#{module.location}') Error in the documentation? Can’t find what you are looking for? Let us know!
+diff --git a/views/module/events.jade b/views/module/events.jade
+index 7c42dd3..7ee542d 100644
+--- a/views/module/events.jade
++++ b/views/module/events.jade
+@@ -8,6 +8,7 @@
+             - if (event.extensionModule) klass += ' extension-module'
+             div(class="#{klass}")
+                 div.jsdoc-title
++                    a(class='dashAnchor', name='//apple_ref/cpp/Event/#{encodeURIComponent(event.name)}')
+                     a(name='#{(module.version + module.location + '_' +event.name).replace(/\/|\./g, "_")}')
+                     span.functionIcon #{event.name}
+                     | <span class="parameters">(
+diff --git a/views/module/methods.jade b/views/module/methods.jade
+index c8e9728..e90dc6f 100644
+--- a/views/module/methods.jade
++++ b/views/module/methods.jade
+@@ -8,6 +8,7 @@
+             - if (method.extensionModule) klass += ' extension-module'
+             div(class="#{klass}")
+                 div.jsdoc-title
++                    a(class='dashAnchor', name='//apple_ref/cpp/Method/#{encodeURIComponent(method.name)}')
+                     a(name='#{(module.version + module.location + '_' +method.name).replace(/\/|\./g, "_")}')
+                     span.functionIcon #{method.name}
+                     | <span class="parameters">(
+diff --git a/views/module/properties.jade b/views/module/properties.jade
+index 8e1f684..2cb09d9 100644
+--- a/views/module/properties.jade
++++ b/views/module/properties.jade
+@@ -8,6 +8,7 @@
+             - if (prop.inherited) klass += ' inherited'
+             div(class="#{klass}")
+                 div.jsdoc-title
++                    a(class='dashAnchor', name='//apple_ref/cpp/Property/#{encodeURIComponent(prop.name)}')
+                     a(name='#{(module.version + module.location + '_' +prop.name).replace(/\/|\./g, "_")}')
+                     span(class="#{convertType(prop.types[0])}Icon") #{prop.name}
+                     - if (prop.private)
