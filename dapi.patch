@@ -35,6 +35,33 @@ index 52a5004..baca6e6 100644
          /**
           * suffix - set to the file extension of the reference docs you want to locally search for.
           **/
+diff --git a/lib/generate.js b/lib/generate.js
+index 55b40c9..7295c6f 100644
+--- a/lib/generate.js
++++ b/lib/generate.js
+@@ -257,7 +257,14 @@ function hyperlink(text, label, config, moduleversion) {
+     }
+ 
+     if (url) {
+-        return '<a class="jsdoc-link" href="' + config.contextPath + moduleversion + '/' + url + config.moduleExtension + '">'
++		var hash = url.indexOf('#');
++		if (hash !== -1) {
++			url = url.slice(0, hash) + config.moduleExtension + url.slice(hash);
++		}
++		else {
++			url += config.moduleExtension;
++		}
++        return '<a class="jsdoc-link" href="' + config.contextPath + moduleversion + '/' + url + '">'
+             + (label || text)
+             + '</a>';
+     } else {
+@@ -417,4 +424,4 @@ function convertType(type) {
+ exports.generate = generate;
+ exports.loadDetails = loadDetails;
+ exports.convertType = convertType;
+-exports.autoHyperlink = autoHyperlink;
+\ No newline at end of file
++exports.autoHyperlink = autoHyperlink;
 diff --git a/public/css/site_original.css b/public/css/site_original.css
 index c46aeda..5def04e 100644
 --- a/public/css/site_original.css
