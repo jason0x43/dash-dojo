@@ -8,10 +8,10 @@ Prerequisites
 The following applications and packages need to be available:
 
 * Python 2.7.x
-** Sphinx
-** Cheetah
-** CherryPy
-** Docutils
+  * Sphinx
+  * Cheetah
+  * CherryPy
+  * Docutils
 
 Building
 --------
