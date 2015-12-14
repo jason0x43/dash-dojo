@@ -33,7 +33,10 @@ function checkout(commit, options) {
 }
 
 function clean(options) {
-	return run('git clean -d -f', options);
+	return Promise.all([
+		run('git clean -d -f', options),
+		run('rm -rf build')
+	]);
 }
 
 function copy(src, dest) {
@@ -301,7 +304,7 @@ var tasks = {
 	},
 
 	build: {
-		description: 'Build the docset',
+		description: 'Build the docset (compile it and generate the index)',
 		command: function () {
 			return tasks.compile.command().then(function () {
 				return Promise.all([
@@ -348,17 +351,20 @@ var args = yargs
 
 Object.keys(tasks).forEach(function (task) {
 	args = args.command(task, tasks[task].description, function () {
-		tasks[task].command().then(function () {
-			var now = Number(new Date());
-			var elapsed = now - start;
-			console.log('Finished in ' + Math.round(elapsed / 1000) + ' seconds');
-		}, function (error) {
-			var message = String(error);
-			if (error.stack) {
-				message += '\n' + error.stack.split('\n').slice(1).join('\n');
+		tasks[task].command().then(
+			function () {
+				var now = Number(new Date());
+				var elapsed = now - start;
+				console.log('Finished in ' + Math.round(elapsed / 1000) + ' seconds');
+			},
+			function (error) {
+				var message = String(error);
+				if (error.stack) {
+					message += '\n' + error.stack.split('\n').slice(1).join('\n');
+				}
+				console.error(message);
 			}
-			console.error(message);
-		});
+		);
 	});
 });
 
